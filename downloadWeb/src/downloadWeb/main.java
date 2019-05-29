@@ -2,7 +2,10 @@ package downloadWeb;
 
 import java.io.*; 
 
-import java.net.URL; 
+import java.net.URL;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.channels.ReadableByteChannel;
 import java.net.MalformedURLException;
 
 import org.apache.commons.lang3.StringUtils;
@@ -53,7 +56,7 @@ public class main {
         System.out.print("Download Successfully");
     }
 	
-	public static void DownloadImages(String webpage, File out) throws IOException {
+	public static void DownloadImages(String webpage) throws IOException {
 		Document document = Jsoup
                 .connect(webpage)
                 .userAgent("Mozilla/5.0")
@@ -66,47 +69,67 @@ public class main {
         for(Element imageElement : imageElements){
             
             //make sure to get the absolute URL using abs: prefix
-            String strImageURL = imageElement.attr("abs:src");
+            String strImageURL = imageElement.attr("src");
             
             //download image one by one
-            downloadImage(strImageURL, out);
+            downloadImage(strImageURL);
             
         }
 	}
 	
-private static void downloadImage(String strImageURL, File out){
+private static void downloadImage(String strImageURL){
         
         //get file name from image path
         String strImageName = 
                 strImageURL.substring( strImageURL.lastIndexOf("/") + 1 );
         
+        String path =strImageURL.replace("https://", "");
+        path = path.replace("http://", "");
+        path = "./website downloaded/" + path  + "/";
+        createDirectories a = new createDirectories();
+        System.out.println("URL là: " + strImageURL);
+        System.out.println("Thư mục là: " + path);
+    	try {
+    		//tạo thư mục chứa html
+    		a.createDirectories(path);
+    		
+    		ReadableByteChannel readableByteChannel = Channels.newChannel(new URL(strImageURL).openStream());
+    		FileOutputStream fileOutputStream = new FileOutputStream(path+ strImageName);
+    		FileChannel fileChannel = fileOutputStream.getChannel();
+    		fileOutputStream.getChannel()
+    		  .transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
+//    		try {
+//                
+//                //open the stream from URL
+//                URL urlImage = new URL(strImageURL);
+//                InputStream in = urlImage.openStream();
+//                
+//                byte[] buffer = new byte[4096];
+//                int n = -1;
+//                
+//                OutputStream os = 
+//                    new FileOutputStream( path + strImageName );
+//                
+//                //write bytes to the output stream
+//                while ( (n = in.read(buffer)) != -1 ){
+//                    os.write(buffer, 0, n);
+//                }
+//                
+//                //close the stream
+//                os.close();
+//                
+//                System.out.println("Image saved");
+//                
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+    	}
+    	catch(Exception e) {
+    		
+    	}
         System.out.println("Saving: " + strImageName + ", from: " + strImageURL);
         
-        try {
-            
-            //open the stream from URL
-            URL urlImage = new URL(strImageURL);
-            InputStream in = urlImage.openStream();
-            
-            byte[] buffer = new byte[4096];
-            int n = -1;
-            
-            OutputStream os = 
-                new FileOutputStream( out.toString() + "/" + strImageName );
-            
-            //write bytes to the output stream
-            while ( (n = in.read(buffer)) != -1 ){
-                os.write(buffer, 0, n);
-            }
-            
-            //close the stream
-            os.close();
-            
-            System.out.println("Image saved");
-            
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        
         
     }
 	
@@ -115,9 +138,10 @@ private static void downloadImage(String strImageURL, File out){
 	public static void DownloadAll(String webpage, File out) throws IOException{
 //		String abc = out.toString();
 //		abc = abc + "/index.html";
+//		abc = abc.replace("\\", "/");
 //		File newOut = new File(abc);
 //		DownloadWebPage(webpage,newOut);
-//		Document doc = Jsoup.connect(webpage).get();
+		Document doc = Jsoup.connect(webpage).get();
 //		Elements links = doc.select("a[href]");
 //		//download html href
 //        for (Element link : links) {   			
@@ -160,10 +184,23 @@ private static void downloadImage(String strImageURL, File out){
 //        	}
 //        }
 //        renameHref rename = new renameHref();
-//		rename.renameHref(abc);
+//		rename.renameHref(abc.replace("\\", "/"));
 //		//System.out.println(listHrefDownloaded.listHref.size());
 		
-		DownloadImages(webpage, out);
+		Elements imageElements = doc.select("img");
+        
+        //iterate over each image
+        for(Element imageElement : imageElements){
+            
+            //make sure to get the absolute URL using abs: prefix
+            String strImageURL = imageElement.attr("src");
+            
+            //download image one by one
+            downloadImage(strImageURL);
+            
+        }
+		//System.out.println(webpage);
+		//renameHref.renameImagePath(abc.replace("\\", "/"));
 		
 	}
 	

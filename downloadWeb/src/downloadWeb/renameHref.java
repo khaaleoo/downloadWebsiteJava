@@ -13,7 +13,46 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 public class renameHref {
+	
+	public static void renameImagePath(String path) throws IOException{
+		
+		System.out.println(path);
+		Document doc = Jsoup.parse(new File(path), "UTF-8", "");
+		Elements imageElements = doc.select("img");
+		 for(Element imageElement : imageElements){
+			 try {
+			 String strImageURL = imageElement.attr("src");
+			 String strImageName = 
+		                strImageURL.substring( strImageURL.lastIndexOf("/") + 1 );
+			 strImageURL = strImageURL.replace("./", "");
+			 strImageURL = strImageURL.replace("../", "");
+			 strImageURL = strImageURL.replace("http://", "");
+			 strImageURL = strImageURL.replace("https://", "");
+			 if (strImageURL.charAt(strImageURL.length()-1) == '/'){
+				 strImageURL = StringUtils.chop(strImageURL);
+				}
+			 
+			 strImageURL = "../website downloaded/" + strImageURL + "/" + strImageName;
+			 imageElement.attr("src", strImageURL);
+			 System.out.println(strImageURL);}
+			 catch(Exception e) {
+				 
+			 }
+		 }
+		BufferedWriter writer = null;
+
+        try {
+            writer = new BufferedWriter(new OutputStreamWriter(
+					new FileOutputStream(new File(path)), "UTF8"));
+
+            writer.write(doc.html());
+
+        } catch (IOException e) {
+        }
+		
+	}
 	public static void renameHref(String path) throws IOException {
+		try {
 		path = "./" + path.toString().replace(".\\", "");
     	//System.out.println(path);
 		Document doc = Jsoup.parse(new File(path), "UTF-8", "");
@@ -55,5 +94,8 @@ public class renameHref {
         } catch (IOException e) {
         }
         writer.close();
+		}catch(Exception e) {
+			
+		}
 	}
 }

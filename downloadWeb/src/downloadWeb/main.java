@@ -52,86 +52,127 @@ public class main {
 
         System.out.print("Download Successfully");
     }
-
-	public static void DownloadAll(String webpage, File out) throws IOException{
-		String abc = out.toString();
-		abc = abc + "/index.html";
-		File newOut = new File(abc);
-		DownloadWebPage(webpage,newOut);
-		Document doc = Jsoup.connect(webpage).get();
-		Elements links = doc.select("a[href]");
-		
-        for (Element link : links) {
-        	//System.out.println(link.attr("abs:href"));
-        	
-        	String path = "./" + out.toString().replace(".\\", "") + "/" + link.attr("abs:href").replace("https://", "");
-        	path = path.replace("http://", "");
-        	
-        	createDirectories a = new createDirectories();
-        	try {
-        		a.createDirectories(path);
-        		if (path.charAt(path.length()-1) == '/')
-            		path = StringUtils.chop(path);
-            	path += "/index.html";
-            	File File_path = new File(path);
-            	
-            	DownloadWebPage(link.attr("abs:href"),File_path);
-            	
-            	//note here
-            	//link.attr("href", path);
-            	
-            	System.out.println(link);
-            	//System.out.println(link.attr("abs:href"));
-            	//System.out.println(path+"\n");
-        	}
-        	catch (Exception e){
-        		System.out.println("Không thể download:" + link.attr("abs:href"));
-        	}
-        	        	
-        	//String url = link.attr("abs:href"); 
-        	//DownloadWebPage(link.attr("abs:href"),);
-        }
+	
+	public static void DownloadImages(String webpage, File out) throws IOException {
+		Document document = Jsoup
+                .connect(webpage)
+                .userAgent("Mozilla/5.0")
+                .timeout(10 * 1000)
+                .get();
+		//select all img tags
+        Elements imageElements = document.select("img");
         
-		renameHref(abc);
+        //iterate over each image
+        for(Element imageElement : imageElements){
+            
+            //make sure to get the absolute URL using abs: prefix
+            String strImageURL = imageElement.attr("abs:src");
+            
+            //download image one by one
+            downloadImage(strImageURL, out);
+            
+        }
 	}
 	
-	public static void renameHref(String path) throws IOException {
-		path = "./" + path.toString().replace(".\\", "");
-    	//System.out.println(path);
-		Document doc = Jsoup.parse(new File(path), "UTF-8", "");
-		Elements links = doc.select("a[href]");
-		for (Element link : links) {
-			String a = link.attr("href");
-			a = a.replace("http://", "");
-			a = a.replace("https://", "");
-			if (a.charAt(a.length()-1) == '/')
-        		a = StringUtils.chop(a);
-			a = "./" + a + "/index.html";
-			link.attr("href",a);
-			System.out.println(link);
-		}
-		BufferedWriter writer = null;
-
+private static void downloadImage(String strImageURL, File out){
+        
+        //get file name from image path
+        String strImageName = 
+                strImageURL.substring( strImageURL.lastIndexOf("/") + 1 );
+        
+        System.out.println("Saving: " + strImageName + ", from: " + strImageURL);
+        
         try {
-            writer = new BufferedWriter(new OutputStreamWriter(
-					new FileOutputStream(new File(path)), "UTF8"));
-
-            writer.write(doc.html());
-
+            
+            //open the stream from URL
+            URL urlImage = new URL(strImageURL);
+            InputStream in = urlImage.openStream();
+            
+            byte[] buffer = new byte[4096];
+            int n = -1;
+            
+            OutputStream os = 
+                new FileOutputStream( out.toString() + "/" + strImageName );
+            
+            //write bytes to the output stream
+            while ( (n = in.read(buffer)) != -1 ){
+                os.write(buffer, 0, n);
+            }
+            
+            //close the stream
+            os.close();
+            
+            System.out.println("Image saved");
+            
         } catch (IOException e) {
+            e.printStackTrace();
         }
-        writer.close();
+        
+    }
+	
+	 
+
+	public static void DownloadAll(String webpage, File out) throws IOException{
+//		String abc = out.toString();
+//		abc = abc + "/index.html";
+//		File newOut = new File(abc);
+//		DownloadWebPage(webpage,newOut);
+//		Document doc = Jsoup.connect(webpage).get();
+//		Elements links = doc.select("a[href]");
+//		//download html href
+//        for (Element link : links) {   			
+//        	try {
+//        		String checkURL = new URL(link.attr("abs:href")).getHost();
+//        		if(!checkURL.equals(getMainHost.mainHost))
+//        			continue;
+//        	}
+//        	catch(Exception e) {
+//        		continue;
+//        	}
+//        	String path = "./" + out.toString().replace(".\\", "") + "/" + link.attr("abs:href").replace("https://", "");
+//        	path = path.replace("http://", "");
+//        	if (listHrefDownloaded.listHref.contains(path)) {
+//        		continue;
+//        	}
+//        	else {
+//        		
+//	    		//thêm path vào listHref
+//	    		listHrefDownloaded.listHref.add(path);
+//	        	createDirectories a = new createDirectories();
+//	        	try {
+//	        		//tạo thư mục chứa html
+//	        		a.createDirectories(path);
+//	        		
+//	        		
+//	        		if (path.charAt(path.length()-1) == '/')
+//	            		path = StringUtils.chop(path);
+//	            	path += "/index.html";
+//	            	File File_path = new File(path);
+//	            	
+//	            	DownloadWebPage(link.attr("abs:href"),File_path);	            
+//	            	
+//	            	//System.out.println(link);
+//
+//	        	}
+//	        	catch (Exception e){
+//	        		//System.out.println("Cannot download:" + link.attr("abs:href"));
+//	         }
+//        	}
+//        }
+//        renameHref rename = new renameHref();
+//		rename.renameHref(abc);
+//		//System.out.println(listHrefDownloaded.listHref.size());
+		
+		DownloadImages(webpage, out);
+		
 	}
 	
 	public static void main(String[] args) throws InterruptedException, IOException {
-		String url = "https://bongda24h.vn/"; 
-		//File out = new File("C:\\Users\\Kha Leo PC\\Desktop\\downloaded\\index.html");
+		String url = "https://www.24h.com.vn/"; 
 		File path = new File("./website downloaded");
-		//File path1 = new File(".///website downloaded");
-		//System.out.println(path1.toString());
-		DownloadAll(url,path);
-       	//new Thread(new downloadUrl(url,out)).start();
-		
+		getMainHost.mainHost += new URL(url).getHost();
+		System.out.println(getMainHost.mainHost);
+		DownloadAll(url,path);		
 	}
 
 }
